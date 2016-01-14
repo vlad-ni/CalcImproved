@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Calculator</string>
+    <string name="ERR_BCST_SRV">Error: service not running</string>
+    <string name="ERR_BCST_EX">Error: error getting data</string>
+</resources>
