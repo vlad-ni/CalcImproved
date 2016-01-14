@@ -1,6 +1,6 @@
 package com.vladimir.calculator;
 
-import android.content.pm.PackageManager;
+import android.app.ActivityManager;
 import android.support.percent.PercentRelativeLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -11,6 +11,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.app.Activity;
+import java.util.List;
 
 
 public class MainActivity extends AppCompatActivity {
@@ -26,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        checkService();
         setContentView(R.layout.activity_main);
 
         numberField = (TextView) findViewById(R.id.textNumberField);
@@ -178,11 +180,11 @@ public class MainActivity extends AppCompatActivity {
     public void calculateAndSetResult(){
         if (operation != null && firstNumber != null && secondNumber != null) {
             busy(true);
-            Intent intent = new Intent();
-            intent.setAction("com.vladimir.calculateRequest");
 
-            PackageManager packageManager = getPackageManager();
-            if (packageManager.queryBroadcastReceivers(intent, 0).size() > 0) {
+            try {
+                checkService();
+                Intent intent = new Intent();
+                intent.setAction("com.vladimir.calculateRequest");
                 intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
                 intent.putExtra("firstNumber", firstNumber);
                 intent.putExtra("secondNumber", secondNumber);
@@ -191,7 +193,7 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onReceive(Context context, Intent intent) {
                         Bundle resultExtras = getResultExtras(false);
-                        String message = "";
+                        String message;
                         String result = getResultData();
                         if (resultExtras != null && result != null) {
                             message = resultExtras.getString("Message");
@@ -202,8 +204,8 @@ public class MainActivity extends AppCompatActivity {
                         busy(false);
                     }
                 }, null, Activity.RESULT_OK, null, null);
-            } else {
-                MainActivity.this.setResult(null, getString(R.string.ERR_BCST_SRV));
+            } catch (Exception ex) {
+                MainActivity.this.setResult(null, ex.getMessage());
                 busy(false);
             }
         }
@@ -215,6 +217,25 @@ public class MainActivity extends AppCompatActivity {
         for (int i = 0; i < layout.getChildCount(); i++) {
             View child = layout.getChildAt(i);
             child.setEnabled(!showBusy);
+        }
+    }
+
+    public void checkService(){
+        boolean serviceRunning = false;
+        ActivityManager activityManager = (ActivityManager) this.getSystemService(ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> procInfos = activityManager.getRunningAppProcesses();
+
+        for (int i = 0; i < procInfos.size(); i++) {
+            if (procInfos.get(i).processName.equals("com.vladimir.calcservice")) {
+                serviceRunning = true;
+                break;
+            }
+        }
+
+        if (!serviceRunning) {
+            Intent launchIntent = getPackageManager().getLaunchIntentForPackage("com.vladimir.calcservice");
+            launchIntent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+            startActivity(launchIntent);
         }
     }
 }
