@@ -180,9 +180,9 @@ public class MainActivity extends AppCompatActivity {
     public void calculateAndSetResult(){
         if (operation != null && firstNumber != null && secondNumber != null) {
             busy(true);
+            checkService();
 
             try {
-                checkService();
                 Intent intent = new Intent();
                 intent.setAction("com.vladimir.calculateRequest");
                 intent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
@@ -221,21 +221,25 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void checkService(){
-        boolean serviceRunning = false;
-        ActivityManager activityManager = (ActivityManager) this.getSystemService(ACTIVITY_SERVICE);
-        List<ActivityManager.RunningAppProcessInfo> procInfos = activityManager.getRunningAppProcesses();
+        try {
+            boolean serviceRunning = false;
+            ActivityManager activityManager = (ActivityManager) this.getSystemService(ACTIVITY_SERVICE);
+            List<ActivityManager.RunningAppProcessInfo> procInfos = activityManager.getRunningAppProcesses();
 
-        for (int i = 0; i < procInfos.size(); i++) {
-            if (procInfos.get(i).processName.equals("com.vladimir.calcservice")) {
-                serviceRunning = true;
-                break;
+            for (int i = 0; i < procInfos.size(); i++) {
+                if (procInfos.get(i).processName.equals("com.vladimir.calcservice")) {
+                    serviceRunning = true;
+                    break;
+                }
             }
-        }
-
-        if (!serviceRunning) {
-            Intent launchIntent = getPackageManager().getLaunchIntentForPackage("com.vladimir.calcservice");
-            launchIntent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
-            startActivity(launchIntent);
+            if (!serviceRunning) {
+                Intent launchIntent = getPackageManager().getLaunchIntentForPackage("com.vladimir.calcservice");
+                launchIntent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
+                startActivity(launchIntent);
+            }
+        }catch (Exception ex){
+            setResult(null, ex.getMessage());
+            busy(false);
         }
     }
 }
